@@ -1,0 +1,39 @@
+version: '2'
+services:
+  nginx:
+    image: nginx
+    hostname: ${DOCKER_NGINX_HOSTNAME}
+    ports:
+      - "80:80"
+    volumes_from:
+      - wordpress
+    volumes:
+      - ./files/conf.d:/etc/nginx/conf.d:ro
+      - ./files/wordpress/.htpasswd:/var/www/html/.htpasswd:ro
+    depends_on:
+      - wordpress
+    links:
+      - wordpress
+  wordpress:
+    build: ./docker/wordpress
+    depends_on:
+      - db
+    links:
+      - db
+    volumes:
+      - ./files/wordpress/wp-content/languages:/var/www/html/wp-content/languages
+      - ./files/wordpress/wp-content/plugins:/var/www/html/wp-content/plugins
+      - ./files/wordpress/wp-content/themes:/var/www/html/wp-content/themes
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_PASSWORD: root
+      WORDPRESS_DB_USER: root
+  db:
+    build: ./docker/mariadb
+    volumes:
+      - ./.data/db/mysql:/var/lib/mysql
+      - ./.data/conf.d:/etc/mysql/conf.d:ro
+    environment:
+      MYSQL_DATABASE: wordpress
+      MYSQL_ROOT_PASSWORD: root
+    restart: always
